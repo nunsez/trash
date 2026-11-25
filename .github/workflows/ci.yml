@@ -1,0 +1,36 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+
+env:
+  V_VERSION: 952e09c9a2e9b3ae0df17c3b6b598cb06bbf95fc
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+          - os: macos-latest
+          - os: windows-latest
+            vflags: -cc msvc
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: vlang/setup-v@v1.7
+        with:
+          version: ${{ env.V_VERSION }}
+          cache: true
+      - name: Check
+        env:
+          VFLAGS: ${{ matrix.vflags }}
+        run: v run make.vsh ci

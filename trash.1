@@ -1,0 +1,136 @@
+.TH TRASH 1 "2026-11-25" "trash 0.1.0" "User Commands"
+.SH NAME
+trash \- move files and directories to the system trash
+.SH SYNOPSIS
+.B trash
+.RI [ OPTION ]...
+.I FILE ...
+.SH DESCRIPTION
+.B trash
+moves each
+.I FILE
+to the trash of its volume instead of deleting it. Nothing is deleted
+permanently: a target that cannot be moved to the trash is reported as an error
+and left in place.
+.PP
+On Linux the freedesktop.org Trash specification is followed, so items appear
+in file managers and in
+.BR gio (1)
+and
+.B trash-cli
+as usual. On macOS the system file manager moves the item, so Finder's
+"Put Back" works. On Windows the Recycle Bin is used.
+.PP
+Failures are reported per item and the remaining targets are still processed.
+The exit status is
+.B 0
+when every target was trashed and
+.B 1
+when any of them failed.
+.SH OPTIONS
+.TP
+.BR \-f ", " \-\-force
+Ignore missing targets. A target that does not exist is skipped silently and
+does not change the exit status. This does not affect any other failure.
+.TP
+.BR \-r ", " \-R
+Allow a directory to be trashed together with its contents.
+.TP
+.BR \-d ", " \-\-dir
+Allow an empty directory to be trashed without
+.BR \-r .
+A non-empty directory is still refused.
+.TP
+.BR \-v ", " \-\-verbose
+Print
+.B trashed 'FILE'
+for every target that was moved.
+.TP
+.B \-\-help
+Print the help text and exit.
+.TP
+.B \-\-version
+Print the version and exit.
+.TP
+.B \-\-
+End of options. Every following argument is a target, even if it starts with a
+dash.
+.SH REFUSALS
+These targets are refused with an error and nothing is moved:
+.IP \(bu 2
+a filesystem root;
+.IP \(bu 2
+the current directory;
+.IP \(bu 2
+a path whose last component is
+.B .
+or
+.BR .. ;
+.IP \(bu 2
+the trash directory itself or one of its ancestors;
+.IP \(bu 2
+a mount point, or a directory that contains one;
+.IP \(bu 2
+a directory without
+.B \-r
+or, for a non-empty one,
+.BR \-d ;
+.IP \(bu 2
+a target on a volume that has no usable trash directory;
+.IP \(bu 2
+on Windows, a path over 259 characters, a reserved device name, a
+.B :
+after the drive prefix, a last component ending in a dot or a space, a UNC
+path, or an object larger than the Recycle Bin.
+.SH DIFFERENCES FROM rm
+.B trash
+accepts only the
+.BR rm (1)
+flags that have a meaning without permanent deletion:
+.BR \-f ,
+.BR \-r ,
+.BR \-R ,
+.BR \-d
+and
+.BR \-v .
+Other
+.B rm
+flags, including
+.BR \-i ,
+.BR \-I ,
+.B \-\-interactive ,
+.B \-\-recursive
+and the
+.B \-\-preserve\-root
+family, are rejected rather than ignored.
+.PP
+A symlink in the middle of a path is resolved the way
+.BR rm (1)
+resolves it, but a symlink given as the target is trashed as a link and never
+dereferenced. Mount points are never trashed.
+.SH EXIT STATUS
+.TP
+.B 0
+Every target was trashed, or was skipped because of
+.BR \-f .
+.TP
+.B 1
+At least one target failed, or the command line was invalid.
+.SH EXAMPLES
+.TP
+.B trash notes.txt
+Move one file to the trash.
+.TP
+.B trash -r old\-project
+Move a directory tree to the trash.
+.TP
+.B trash -f \-v build.log
+Move a log file, ignore a missing one, and print what was moved.
+.SH SEE ALSO
+.BR rm (1),
+.BR gio (1)
+.SH BUGS
+Report bugs at the
+.UR https://github.com/nunsez/trash/issues
+issue tracker
+.UE .
