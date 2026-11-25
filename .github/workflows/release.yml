@@ -1,0 +1,74 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: linux-amd64
+            bin: trash
+            archive: tar.gz
+          - os: macos-13
+            target: darwin-amd64
+            bin: trash
+            archive: tar.gz
+          - os: macos-14
+            target: darwin-arm64
+            bin: trash
+            archive: tar.gz
+          - os: windows-latest
+            target: windows-amd64
+            bin: trash.exe
+            archive: zip
+            vflags: -cc msvc
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: vlang/setup-v@v1.7
+        with:
+          version: 952e09c9a2e9b3ae0df17c3b6b598cb06bbf95fc
+          cache: true
+      - name: Build
+        env:
+          VFLAGS: ${{ matrix.vflags }}
+        run: v -prod -o ${{ matrix.bin }} ./cmd/trash
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p dist/completions
+          cp "${{ matrix.bin }}" dist/
+          cp trash.1 dist/
+          cp completions/* dist/completions/
+          cd dist
+          if [ "${{ matrix.archive }}" = "zip" ]; then
+            7z a "../trash-${{ matrix.target }}.zip" .
+          else
+            tar czf "../trash-${{ matrix.target }}.tar.gz" .
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trash-${{ matrix.target }}
+          path: trash-${{ matrix.target }}.${{ matrix.archive }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Checksums
+        run: cd dist && sha256sum * > SHA256SUMS
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
