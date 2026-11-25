@@ -42,7 +42,6 @@ const sources = [
 	'v.mod'
 	'trash.v'
 	'options.v'
-	'put.v'
 	'errors.v'
 	'put_nix.v'
 	'put_linux.v'

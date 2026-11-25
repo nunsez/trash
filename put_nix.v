@@ -3,6 +3,10 @@ module trash
 import internal.fsx
 import internal.pathx
 
+fn put_impl(targets []string, opts PutOptions) []PutResult {
+	return put_many(targets, opts)
+}
+
 // Resolved is a target after the descriptor walk: the descriptor of the
 // directory that holds it, its basename, its identity from `fstatat`, and the
 // canonical path built from the parent descriptor.
@@ -20,6 +24,27 @@ struct Resolved {
 struct GuardContext {
 	mounts     []string
 	candidates []string
+}
+
+// put_one handles a single target. A missing target is silently skipped when
+// `force` is set: the result then has neither `trashed` nor `reason`.
+fn put_one(target string, opts PutOptions, mounts []string, mounts_ok bool) PutResult {
+	trash_path := put_target(target, opts, mounts, mounts_ok) or {
+		if opts.force && is_missing_error(err) {
+			return PutResult{
+				path: target
+			}
+		}
+		return PutResult{
+			path:   target
+			reason: err.msg()
+		}
+	}
+	return PutResult{
+		path:       target
+		trashed:    true
+		trash_path: trash_path
+	}
 }
 
 // put_many is the Unix batch entry point. The mount table is read and

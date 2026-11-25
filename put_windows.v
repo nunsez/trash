@@ -7,6 +7,10 @@ import os
 // equivalent: the guards here work on the path string and on the attributes of
 // the object.
 
+fn put_impl(targets []string, opts PutOptions) []PutResult {
+	return put_all(targets, opts)
+}
+
 // put_all handles the whole command line at once, because `IFileOperation` is a
 // batch operation: one `PerformOperations` covers every accepted target.
 fn put_all(targets []string, opts PutOptions) []PutResult {
